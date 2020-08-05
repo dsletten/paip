@@ -1,0 +1,57 @@
+;#!/usr/local/bin/sbcl --script
+
+;;;;   Hey, Emacs, this is a -*- Mode: Lisp; Syntax: Common-Lisp -*- file!
+;;;;
+;;;;   Of all the languages I know, I like Lisp the best, simply because it's the most beautiful.
+;;;;   -- Paul Graham
+;;;;
+;;;;   Name:               grammar-clos.lisp
+;;;;
+;;;;   Started:            Wed Dec  4 02:01:46 2019
+;;;;   Modifications:
+;;;;
+;;;;   Purpose:
+;;;;
+;;;;
+;;;;
+;;;;   Calling Sequence:
+;;;;
+;;;;
+;;;;   Inputs:
+;;;;
+;;;;   Outputs:
+;;;;
+;;;;   Example:
+;;;;
+;;;;   Notes:
+;;;;
+;;;;
+(load "/Users/dsletten/lisp/packages/test.lisp")
+
+(defpackage :grammar-clos (:use :common-lisp :test))
+
+(in-package :grammar-clos)
+
+(defun parse-rule (rule)
+  (destructuring-bind (lhs -> rhs) rule
+    (declare (ignore ->))
+    (values lhs rhs)))
+
+(defclass grammar ()
+  ((rules :reader rules :initform (make-hash-table))))
+
+(defmethod initialize-instance :after ((g grammar) &rest init-rules)
+(print g)
+  (with-slots (rules) g
+    (dolist (rule init-rules)
+(print rule)
+      (multiple-value-bind (lhs rhs) (parse-rule rule)
+        (setf (gethash lhs rules) rhs)))) )
+
+(defgeneric consult (grammar lhs)
+  (:documentation "Look up the RHS of the rule specified LHS in the GRAMMAR."))
+(defmethod consult ((g grammar) lhs)
+  (gethash lhs (rules g)))
+
+(defun make-grammar (&rest rules)
+  (apply #'make-instance 'grammar :allow-other-keys t rules))

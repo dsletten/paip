@@ -1,0 +1,35 @@
+(let ((chapters '(3 34 48 109 151 175 219 238 265 315 348 388 434 460 509 530 564 596 655 684 715 753 784 834 866 897))) (mapcar #'(lambda (x y) (- y x)) chapters (rest chapters)))
+
+(31 14 61 42 24 44 19 27 50 33 40 46 26 49 21 34 32 59 29 31 38 31 50 32 31)
+* (loop for i from 1 for chapter in * do (format t "~2,' D: ~D~%" i chapter))
+Part I Introduction to Common Lisp
+ 1: 31 Introduction to Lisp
+ 2: 14 A Simple Lisp Program
+ 3: 61 Overview of Lisp
+Part II Early AI Programs
+ 4: 42 GPS: The General Problem Solver
+ 5: 24 Eliza: Dialog with a Machine
+ 6: 44 Building Software Tools
+ 7: 19 Student: Solving Algebra Word Problems
+ 8: 27 Symbolic Mathematics: A Simplification Program
+Part III Tools and Techniques
+ 9: 50 Efficiency Issues
+10: 33 Low-Level Efficiency Issues
+11: 40 Logic Programming
+12: 46 Compiling Logic Programs
+13: 26 Object-Oriented Programs
+14: 49 Knowledge Representation and Reasoning
+Part IV Advanced AI Programs
+15: 21 Symbolic Mathematics with Canonical Forms
+16: 34 Expert Systems
+17: 32 Line-Diagram Labeling by Constraint Satisfaction
+18: 59 Search and the Game of Othello
+19: 29 Introduction to Natural Language
+20: 31 Unification Grammars
+21: 38 A Grammar of English
+Part V The Rest of Lisp
+22: 31 Scheme: An Uncommon Lisp
+23: 50 Compiling Lisp
+24: 32 ANSI Common Lisp
+25: 31 Troubleshooting
+
