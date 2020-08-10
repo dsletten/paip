@@ -33,8 +33,17 @@
 
 (in-package :norvig-gps2)
 
+(defstruct op "An operation"
+  (action nil)
+  (preconditions nil)
+  (add-list nil)
+  (delete-list nil))
+
 ;;;
 ;;;    Rig the existing operator structures to meet new (EXECUTING ...) pattern.
+;;;    
+;;;    These functions are used in isolation to either modify operators defined with MAKE-OP
+;;;    or produce operators via OP. None of them is used during execution of GPS itself.
 ;;;    
 (defun executingp (expr)
   "Is EXPR of the form: (EXECUTING ...)?"
@@ -60,13 +69,10 @@
 ;;;    
 ;(mapc #'convert-op *school-ops*)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;    GPS 2 proper
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar *ops* '() "A list of available operators.") ; _Current_ operators???
-
-(defstruct op "An operation"
-  (action nil)
-  (preconditions nil)
-  (add-list nil)
-  (delete-list nil))
 
 (defun gps (state goals &optional (*ops* *ops*))
   "General Problem Solver 2: from STATE achieve GOALS using *OPS*"
@@ -109,10 +115,10 @@
 
 (defun apply-op (state goal op goal-stack)
   "Return a new, transformed state if op is applicable."
-  (dbg-indent :gps (length goal-stack) "Consider: ~A" (op-action op))
+  (dbg-indent :gps (length goal-stack) "Consider: ~A~%" (op-action op))
   (let ((state2 (achieve-all state (op-preconditions op) (cons goal goal-stack))))
     (unless (null state2)
-      (dbg-indent :gps (length goal-stack) "Action: ~A" (op-action op))
+      (dbg-indent :gps (length goal-stack) "Action: ~A~%" (op-action op))
       (append (remove-if #'(lambda (x)
                              (member-equal x (op-delete-list op)))
                          state2)

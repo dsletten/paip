@@ -58,6 +58,6 @@
     (fresh-line *debug-io*)
     ;; (dotimes (i indent)
     ;;   (princ "  " *debug-io*))
-    (format *debug-io* "~VT" (* indent 2))
+    (format *debug-io* "~V,0T" (* indent 2))
     (apply #'format *debug-io* format-string args)))
 
