@@ -27,41 +27,18 @@
 ;;;;
 ;;;;
 (load "/home/slytobias/lisp/packages/test.lisp")
+(load "/home/slytobias/lisp/books/PAIP/debug.lisp")
 
-(defpackage :norvig-gps2 (:use :common-lisp :test))
+(defpackage :norvig-gps2 (:use :common-lisp :test :debug) (:shadowing-import-from :debug :debug))
 
 (in-package :norvig-gps2)
 
-(defvar *debug-ids* '() "Identifiers used by dbg")
-
-(defun dbg (id format-string &rest args)
-  "Print debugging info if (DEBUG ID) has been specified."
-  (when (member id *debug-ids*)
-    (fresh-line *debug-io*)
-    (apply #'format *debug-io* format-string args)))
-
-(defun debug (&rest ids)
-  "Start dbg output on the given ids."
-  (setf *debug-ids* (union ids *debug-ids*)))
-
-(defun undebug (&rest ids)
-  "Stop dbg on the ids. With no ids, stop dbg altogether."
-  (setf *debug-ids* (if (null ids)
-                        '()
-                        (set-difference *debug-ids* ids))))
-
-(defun dbg-indent (id indent format-string &rest args)
-  "Print indented debugging info if (DEBUG ID) has been specified."
-  (when (member id *debug-ids*)
-    (fresh-line *debug-io*)
-    ;; (dotimes (i indent)
-    ;;   (princ "  " *debug-io*))
-    (format *debug-io* "~VT" (* indent 2))
-    (apply #'format *debug-io* format-string args)))
-
+;;;
+;;;    Rig the existing operator structures to meet new (EXECUTING ...) pattern.
+;;;    
 (defun executingp (expr)
   "Is EXPR of the form: (EXECUTING ...)?"
-  (starts-with expr 'executing))
+  (starts-with-p expr 'executing))
 
 (defun starts-with-p (list expr)
   "Is this a list whose first element is EXPR?"
@@ -78,6 +55,9 @@
   (convert-op
    (make-op :action action :preconditions preconditions :add-list add-list :delete-list delete-list)))
 
+;;;
+;;;    Do this!
+;;;    
 ;(mapc #'convert-op *school-ops*)
 
 (defvar *ops* '() "A list of available operators.") ; _Current_ operators???
@@ -89,12 +69,31 @@
   (delete-list nil))
 
 (defun gps (state goals &optional (*ops* *ops*))
-  "General Problem Solver: from STATE achieve GOALS using *OPS*"
+  "General Problem Solver 2: from STATE achieve GOALS using *OPS*"
   (remove-if #'atom (achieve-all (cons '(start) state) goals nil))) ; ?
 
-(defun achieve (goal)
-  (or (member goal *state*)
-      (some #'apply-op (find-all goal *ops* :test #'appropriatep))))
+(defun achieve-all (state goals goal-stack)
+  "Achieve each goal, and make sure they still hold at the end."
+  (let ((current-state state))
+    (if (and (every #'(lambda (goal)
+                        (setf current-state (achieve current-state goal goal-stack)))
+                    goals)
+             (subsetp goals current-state :test #'equal))
+        current-state
+        nil)))
+;        (list 'huh))))
+;        'huh)))
+
+(defun achieve (state goal goal-stack)
+  "A goal is achieved if it already holds or if there is an appropriate op for it that is applicable."
+  (dbg-indent :gps (length goal-stack) "Goal: ~A" goal)
+  (cond ((member-equal goal state) state)
+        ((member-equal goal goal-stack) nil) ; Cycle!
+        (t (some #'(lambda (op) (apply-op state goal op goal-stack))
+                 (find-all goal *ops* :test #'appropriatep)))) )
+
+(defun member-equal (item list)
+  (member item list :test #'equal))
 
 ;;;
 ;;;    ch. 3
@@ -105,16 +104,23 @@
       (apply #'remove item sequence :test (complement test) keyword-args)))
 
 (defun appropriatep (goal op)
-  (member goal (op-add-list op)))
+  "An op is appropriate to a goal if it is in the add-list of the goal."
+  (member-equal goal (op-add-list op)))
 
-(defun apply-op (op)
-  (cond ((every #'achieve (op-preconditions op))
-         (print `(executing ,(op-action op)))
-         ;; (setf *state* (set-difference *state* (op-delete-list op)))
-         ;; (setf *state* (union *state* (op-add-list op)))
-         (setf *state* (union (set-difference *state* (op-delete-list op)) (op-add-list op)))
-         t)
-        (t nil)))
+(defun apply-op (state goal op goal-stack)
+  "Return a new, transformed state if op is applicable."
+  (dbg-indent :gps (length goal-stack) "Consider: ~A" (op-action op))
+  (let ((state2 (achieve-all state (op-preconditions op) (cons goal goal-stack))))
+    (unless (null state2)
+      (dbg-indent :gps (length goal-stack) "Action: ~A" (op-action op))
+      (append (remove-if #'(lambda (x)
+                             (member-equal x (op-delete-list op)))
+                         state2)
+              (op-add-list op)))) )
+
+(defun use (oplist)
+  "Use oplist as the default list of operators."
+  (length (setf *ops* oplist)))
 
 (defparameter *school-ops* (list (make-op :action 'drive-son-to-school
                                           :preconditions '(son-at-home car-works)
@@ -137,3 +143,9 @@
                                           :add-list '(shop-has-money)
                                           :delete-list '(have-money))))
             
+;; (gps '(son-at-home car-needs-battery have-money have-phone-book) '(son-at-school))
+;; (gps '(son-at-home car-works) '(son-at-school))
+;; (gps '(son-at-home car-needs-battery have-money have-phone-book) '(have-money son-at-school))
+;; (gps '(son-at-home car-needs-battery have-money have-phone-book) '(son-at-school have-money))
+;; (gps '(son-at-home car-needs-battery have-money) '(son-at-school))
+;; (gps '(son-at-home) '(son-at-home))
