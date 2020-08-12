@@ -76,30 +76,61 @@
 
 (defun gps (state goals &optional (*ops* *ops*))
   "General Problem Solver 2: from STATE achieve GOALS using *OPS*"
-  (remove-if #'atom (achieve-all (cons '(start) state) goals nil))) ; ?
+  (let ((success (achieve-all (cons '(start) state) goals)))
+(format t "Success: ~A~%" success)
+    (if (null success)
+        nil
+        (remove-if #'atom success))))
+;  (remove-if #'atom (achieve-all (cons '(start) state) goals))) ; ?
 
-(defun achieve-all (state goals goal-stack)
+(defun achieve-all (state goals &optional goal-stack)
   "Achieve each goal, and make sure they still hold at the end."
-  (let ((current-state state))
-    (if (and (every #'(lambda (goal)
-                        (setf current-state (achieve current-state goal goal-stack)))
-                    goals)
-             (subsetp goals current-state :test #'equal))
-        current-state
-        nil)))
-;        (list 'huh))))
-;        'huh)))
+  (labels ((do-achieve-all (state goals)
+             (dbg :achieve "Current state: ~A~%" state)
+             (dbg :achieve "Goals: ~A~%" goals)
+             (if (endp goals)
+                 state
+                 (let ((new-state (achieve state (first goals) goal-stack)))
+                   (if (null new-state)
+                       nil
+                       (do-achieve-all new-state (rest goals)))) )))
+    (let ((new-state (do-achieve-all state goals)))
+      (cond ((null new-state) nil)
+            ((subsetp goals new-state :test #'equal) new-state)
+            (t nil)))) )
+;; (defun achieve-all (state goals &optional goal-stack)
+;;   "Achieve each goal, and make sure they still hold at the end."
+;;   (let ((current-state state))
+;;     (if (and (every #'(lambda (goal)
+;;                         (setf current-state (achieve current-state goal goal-stack)))
+;;                     goals)
+;;              (subsetp goals current-state :test #'equal))
+;;         current-state
+;;         nil)))
 
 (defun achieve (state goal goal-stack)
   "A goal is achieved if it already holds or if there is an appropriate op for it that is applicable."
   (dbg-indent :gps (length goal-stack) "Goal: ~A" goal)
-  (cond ((member-equal goal state) state)
-        ((member-equal goal goal-stack) nil) ; Cycle!
+  (cond ((goal-present-p goal state) state)
+        ((goal-in-stack-p goal goal-stack) nil)
         (t (some #'(lambda (op) (apply-op state goal op goal-stack))
-                 (find-all goal *ops* :test #'appropriatep)))) )
+                 (candidate-ops goal)))) )
+  ;; (cond ((member-equal goal state) state)
+  ;;       ((member-equal goal goal-stack) nil) ; Cycle!
+  ;;       (t (some #'(lambda (op) (apply-op state goal op goal-stack))
+  ;;                (find-all goal *ops* :test #'appropriatep)))) )
+
+(defun goal-present-p (goal state)
+  (member-equal goal state))
+
+(defun goal-in-stack-p (goal stack)
+  (member-equal goal stack))
 
 (defun member-equal (item list)
   (member item list :test #'equal))
+
+(defun candidate-ops (goal)
+  (find-all goal *ops* :test #'appropriatep))
 
 ;;;
 ;;;    ch. 3
@@ -110,7 +141,7 @@
       (apply #'remove item sequence :test (complement test) keyword-args)))
 
 (defun appropriatep (goal op)
-  "An op is appropriate to a goal if it is in the add-list of the goal."
+  "An op is appropriate to a goal if the goal is in the add-list of the op."
   (member-equal goal (op-add-list op)))
 
 (defun apply-op (state goal op goal-stack)
@@ -119,10 +150,15 @@
   (let ((state2 (achieve-all state (op-preconditions op) (cons goal goal-stack))))
     (unless (null state2)
       (dbg-indent :gps (length goal-stack) "Action: ~A~%" (op-action op))
-      (append (remove-if #'(lambda (x)
-                             (member-equal x (op-delete-list op)))
-                         state2)
+      (append (apply-delete-list (op-delete-list op) state2)
               (op-add-list op)))) )
+      ;; (append (remove-if #'(lambda (x)
+      ;;                        (member-equal x (op-delete-list op)))
+      ;;                    state2)
+      ;;         (op-add-list op)))) )
+
+(defun apply-delete-list (l state)
+  (remove-if #'(lambda (elt) (member-equal elt l)) state))
 
 (defun use (oplist)
   "Use oplist as the default list of operators."
@@ -155,3 +191,38 @@
 ;; (gps '(son-at-home car-needs-battery have-money have-phone-book) '(son-at-school have-money))
 ;; (gps '(son-at-home car-needs-battery have-money) '(son-at-school))
 ;; (gps '(son-at-home) '(son-at-home))
+
+;; * (gps '(at-door on-floor has-ball hungry chair-at-door) '(not-hungry))
+;; Success: ((START) (EXECUTING PUSH-CHAIR-FROM-DOOR-TO-MIDDLE-ROOM)
+;;           CHAIR-AT-MIDDLE-ROOM (EXECUTING CLIMB-ON-CHAIR) AT-BANANAS ON-CHAIR
+;;           (EXECUTING DROP-BALL) (EXECUTING GRASP-BANANAS)
+;;           (EXECUTING EAT-BANANAS) EMPTY-HANDED NOT-HUNGRY)
+;; ((START) (EXECUTING PUSH-CHAIR-FROM-DOOR-TO-MIDDLE-ROOM)
+;;  (EXECUTING CLIMB-ON-CHAIR) (EXECUTING DROP-BALL) (EXECUTING GRASP-BANANAS)
+;;  (EXECUTING EAT-BANANAS))
+
+;; * (gps '(son-at-home car-needs-battery have-money have-phone-book) '(son-at-school) *school-ops*)
+;; Success: ((START) CAR-NEEDS-BATTERY HAVE-PHONE-BOOK (EXECUTING LOOK-UP-NUMBER)
+;;           KNOW-PHONE-NUMBER (EXECUTING TELEPHONE-SHOP)
+;;           IN-COMMUNICATION-WITH-SHOP (EXECUTING TELL-SHOP-PROBLEM)
+;;           SHOP-KNOWS-PROBLEM (EXECUTING GIVE-SHOP-MONEY) SHOP-HAS-MONEY
+;;           (EXECUTING SHOP-INSTALLS-BATTERY) CAR-WORKS
+;;           (EXECUTING DRIVE-SON-TO-SCHOOL) SON-AT-SCHOOL)
+;; ((START) (EXECUTING LOOK-UP-NUMBER) (EXECUTING TELEPHONE-SHOP)
+;;  (EXECUTING TELL-SHOP-PROBLEM) (EXECUTING GIVE-SHOP-MONEY)
+;;  (EXECUTING SHOP-INSTALLS-BATTERY) (EXECUTING DRIVE-SON-TO-SCHOOL))
+
+;;;
+;;;    Without applying CONVERT-OP!!
+;;;    
+;; * (gps '(son-at-home car-needs-battery have-money have-phone-book) '(son-at-school) *school-ops*)
+;; Success: ((START) CAR-NEEDS-BATTERY HAVE-PHONE-BOOK KNOW-PHONE-NUMBER
+;;           IN-COMMUNICATION-WITH-SHOP SHOP-KNOWS-PROBLEM SHOP-HAS-MONEY
+;;           CAR-WORKS SON-AT-SCHOOL)
+;; ((START))
+
+(deftest test-candidate-ops ()
+  (check
+   (eq (op-action (first (candidate-ops 'son-at-school))) 'drive-son-to-school)
+   (eq (op-action (first (candidate-ops 'shop-knows-problem))) 'tell-shop-problem)
+   (eq (op-action (first (candidate-ops 'car-works))) 'shop-installs-battery)))

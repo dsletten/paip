@@ -56,3 +56,7 @@
                                      :preconditions '(has-bananas)
                                      :add-list '(empty-handed not-hungry)
                                      :delete-list '(has-bananas hungry))))
+
+(deftest monkey-eats-bananas ()
+  (check
+   (gps '(at-door on-floor has-ball hungry chair-at-door) '(not-hungry))))
