@@ -81,7 +81,6 @@
     (if (null success)
         nil
         (remove-if #'atom success))))
-;  (remove-if #'atom (achieve-all (cons '(start) state) goals))) ; ?
 
 (defun achieve-all (state goals &optional goal-stack)
   "Achieve each goal, and make sure they still hold at the end."
@@ -98,15 +97,6 @@
       (cond ((null new-state) nil)
             ((subsetp goals new-state :test #'equal) new-state)
             (t nil)))) )
-;; (defun achieve-all (state goals &optional goal-stack)
-;;   "Achieve each goal, and make sure they still hold at the end."
-;;   (let ((current-state state))
-;;     (if (and (every #'(lambda (goal)
-;;                         (setf current-state (achieve current-state goal goal-stack)))
-;;                     goals)
-;;              (subsetp goals current-state :test #'equal))
-;;         current-state
-;;         nil)))
 
 (defun achieve (state goal goal-stack)
   "A goal is achieved if it already holds or if there is an appropriate op for it that is applicable."
@@ -115,10 +105,6 @@
         ((goal-in-stack-p goal goal-stack) nil)
         (t (some #'(lambda (op) (apply-op state goal op goal-stack))
                  (candidate-ops goal)))) )
-  ;; (cond ((member-equal goal state) state)
-  ;;       ((member-equal goal goal-stack) nil) ; Cycle!
-  ;;       (t (some #'(lambda (op) (apply-op state goal op goal-stack))
-  ;;                (find-all goal *ops* :test #'appropriatep)))) )
 
 (defun goal-present-p (goal state)
   (member-equal goal state))
@@ -150,15 +136,13 @@
   (let ((state2 (achieve-all state (op-preconditions op) (cons goal goal-stack))))
     (unless (null state2)
       (dbg-indent :gps (length goal-stack) "Action: ~A~%" (op-action op))
-      (append (apply-delete-list (op-delete-list op) state2)
-              (op-add-list op)))) )
-      ;; (append (remove-if #'(lambda (x)
-      ;;                        (member-equal x (op-delete-list op)))
-      ;;                    state2)
-      ;;         (op-add-list op)))) )
+      (update-state state2 (op-delete-list op) (op-add-list op)))) )
 
-(defun apply-delete-list (l state)
-  (remove-if #'(lambda (elt) (member-equal elt l)) state))
+(defun update-state (state delete-list add-list)
+  (append (apply-delete-list delete-list state) add-list))
+
+(defun apply-delete-list (delete-list state)
+  (remove-if #'(lambda (elt) (member-equal elt delete-list)) state))
 
 (defun use (oplist)
   "Use oplist as the default list of operators."
