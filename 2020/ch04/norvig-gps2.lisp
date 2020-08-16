@@ -76,11 +76,11 @@
 
 (defun gps (state goals &optional (*ops* *ops*))
   "General Problem Solver 2: from STATE achieve GOALS using *OPS*"
-  (let ((success (achieve-all (cons '(start) state) goals)))
-(format t "Success: ~A~%" success)
-    (if (null success)
+  (let ((end-state (achieve-all (cons '(start) state) goals)))
+(format t "Success: ~A~%" end-state)
+    (if (failedp end-state)
         nil
-        (remove-if #'atom success))))
+        (remove-if #'atom end-state))))
 
 (defun achieve-all (state goals &optional goal-stack)
   "Achieve each goal, and make sure they still hold at the end."
@@ -90,19 +90,26 @@
              (if (endp goals)
                  state
                  (let ((new-state (achieve state (first goals) goal-stack)))
-                   (if (null new-state)
+                   (if (failedp new-state)
                        nil
                        (do-achieve-all new-state (rest goals)))) )))
     (let ((new-state (do-achieve-all state goals)))
-      (cond ((null new-state) nil)
+      (cond ((failedp new-state) nil)
             ((subsetp goals new-state :test #'equal) new-state)
             (t nil)))) )
+
+(defun failedp (state)
+  (null state))
 
 (defun achieve (state goal goal-stack)
   "A goal is achieved if it already holds or if there is an appropriate op for it that is applicable."
   (dbg-indent :gps (length goal-stack) "Goal: ~A" goal)
-  (cond ((goal-present-p goal state) state)
-        ((goal-in-stack-p goal goal-stack) nil)
+  (cond ((goal-present-p goal state)
+         (dbg-indent :gps (length goal-stack) "Goal in state")
+         state)
+        ((goal-in-stack-p goal goal-stack) 
+         (dbg-indent :gps (length goal-stack) "Cycle detected")
+         nil)
         (t (some #'(lambda (op) (apply-op state goal op goal-stack))
                  (candidate-ops goal)))) )
 
@@ -134,7 +141,7 @@
   "Return a new, transformed state if op is applicable."
   (dbg-indent :gps (length goal-stack) "Consider: ~A~%" (op-action op))
   (let ((state2 (achieve-all state (op-preconditions op) (cons goal goal-stack))))
-    (unless (null state2)
+    (unless (failedp state2)
       (dbg-indent :gps (length goal-stack) "Action: ~A~%" (op-action op))
       (update-state state2 (op-delete-list op) (op-add-list op)))) )
 
@@ -154,7 +161,8 @@
                                           :delete-list '(son-at-home))
                                  (make-op :action 'shop-installs-battery
                                           :preconditions '(car-needs-battery shop-knows-problem shop-has-money)
-                                          :add-list '(car-works))
+                                          :add-list '(car-works)
+                                          :delete-list '(car-needs-battery)) ; Norvig missed this one!
                                  (make-op :action 'tell-shop-problem
                                           :preconditions '(in-communication-with-shop)
                                           :add-list '(shop-knows-problem))

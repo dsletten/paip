@@ -78,7 +78,8 @@
                                           :delete-list '(son-at-home))
                                  (make-op :action 'shop-installs-battery
                                           :preconditions '(car-needs-battery shop-knows-problem shop-has-money)
-                                          :add-list '(car-works))
+                                          :add-list '(car-works)
+                                          :delete-list '(car-needs-battery)) ; Norvig missed this one!
                                  (make-op :action 'tell-shop-problem
                                           :preconditions '(in-communication-with-shop)
                                           :add-list '(shop-knows-problem))
