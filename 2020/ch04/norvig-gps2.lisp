@@ -40,6 +40,14 @@
   (delete-list nil))
 
 ;;;
+;;;    How to make this work for structure?!
+;;;    
+;; (defmethod initialize-instance :after ((o op) &rest initargs)
+;;   (declare (ignore initargs))
+;;   (format t "Initializing...~%")
+;;   (assert (subsetp (op-delete-list o) (op-preconditions o))))
+
+;;;
 ;;;    Rig the existing operator structures to meet new (EXECUTING ...) pattern.
 ;;;    
 ;;;    These functions are used in isolation to either modify operators defined with MAKE-OP

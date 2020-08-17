@@ -53,7 +53,7 @@
                                      :add-list '(empty-handed)
                                      :delete-list '(has-ball))
                                  (op 'eat-bananas
-                                     :preconditions '(has-bananas)
+                                     :preconditions '(has-bananas hungry)
                                      :add-list '(empty-handed not-hungry)
                                      :delete-list '(has-bananas hungry))))
 
