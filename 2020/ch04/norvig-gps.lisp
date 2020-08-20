@@ -49,7 +49,8 @@
       'failed))
 
 (defun achieve (goal)
-  (or (member goal *state*)
+;  (or (member goal *state*) ; Must change call to MEMBER for maze domain.
+  (or (member goal *state* :test #'equal)
       (some #'apply-op (find-all goal *ops* :test #'appropriatep))))
 
 ;;;
@@ -61,13 +62,12 @@
       (apply #'remove item sequence :test (complement test) keyword-args)))
 
 (defun appropriatep (goal op)
-  (member goal (op-add-list op)))
+;  (member goal (op-add-list op)))
+  (member goal (op-add-list op) :test #'equal))
 
 (defun apply-op (op)
   (cond ((every #'achieve (op-preconditions op))
          (print `(executing ,(op-action op)))
-         ;; (setf *state* (set-difference *state* (op-delete-list op)))
-         ;; (setf *state* (union *state* (op-add-list op)))
          (setf *state* (union (set-difference *state* (op-delete-list op)) (op-add-list op)))
          t)
         (t nil)))

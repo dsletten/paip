@@ -37,7 +37,7 @@
 (in-package :gps)
 
 (defclass operator ()
-  ((action :reader action :initarg :action :type symbol)
+  ((action :reader action :initarg :action :type symbol) ; Possibly a list... See maze operators
    (preconditions :reader preconditions :initarg :preconditions :type list)
    (add-to-state :reader add-to-state :initarg :add-to-state :initform #{} :type set)
    (remove-from-state :reader remove-from-state :initarg :remove-from-state :initform #{} :type set)))
@@ -179,3 +179,55 @@
 ;; (EXECUTING ACHIEVE-FAME) 
 ;; (EXECUTING STRIKE-IT-RICH) 
 ;; SOLVED
+
+(defparameter *gps-maze-ops* (list (make-operator '(move from 1 to 2)
+                                                  :preconditions '((at 1))
+                                                  :add-to-state #{'(at 2)}
+                                                  :remove-from-state #{'(at 1)})
+                                   (make-operator '(move from 2 to 1)
+                                                  :preconditions '((at 2))
+                                                  :add-to-state #{'(at 1)}
+                                                  :remove-from-state #{'(at 2)})
+                                   (make-operator '(move from 2 to 3)
+                                                  :preconditions '((at 2))
+                                                  :add-to-state #{'(AT 3)}
+                                                  :remove-from-state #{'(AT 2)})
+                                   (make-operator '(move from 3 to 2)
+                                                  :preconditions '((at 3))
+                                                  :add-to-state #{'(at 2)}
+                                                  :remove-from-state #{'(at 3)})
+                                   (make-operator '(move from 3 to 4)
+                                                  :preconditions '((at 3))
+                                                  :add-to-state #{'(at 4)}
+                                                  :remove-from-state #{'(at 3)})
+                                   (make-operator '(move from 4 to 3)
+                                                  :preconditions '((at 4))
+                                                  :add-to-state #{'(at 3)}
+                                                  :remove-from-state #{'(at 4)})))
+
+(defparameter *banana-ops* (list (make-operator 'climb-on-chair
+                                                :preconditions '(chair-at-middle-room at-middle-room on-floor)
+                                                :add-to-state #{'at-bananas 'on-chair}
+                                                :remove-from-state #{'at-middle-room 'on-floor})
+                                 (make-operator 'push-chair-from-door-to-middle-room
+                                                :preconditions '(chair-at-door at-door)
+                                                :add-to-state #{'chair-at-middle-room 'at-middle-room}
+                                                :remove-from-state #{'chair-at-door 'at-door})
+                                 (make-operator 'walk-from-door-to-middle-room
+                                                :preconditions '(at-door on-floor)
+                                                :add-to-state #{'at-middle-room}
+                                                :remove-from-state #{'at-door})
+                                 (make-operator 'grasp-bananas
+                                                :preconditions '(at-bananas empty-handed)
+                                                :add-to-state #{'has-bananas}
+                                                :remove-from-state #{'empty-handed})
+                                 (make-operator 'drop-ball
+                                                :preconditions '(has-ball)
+                                                :add-to-state #{'empty-handed}
+                                                :remove-from-state #{'has-ball})
+                                 (make-operator 'eat-bananas
+                                                :preconditions '(has-bananas hungry)
+                                                :add-to-state #{'empty-handed 'not-hungry}
+                                                :remove-from-state #{'has-bananas 'hungry})))
+
+

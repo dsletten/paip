@@ -82,13 +82,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar *ops* '() "A list of available operators.") ; _Current_ operators???
 
+(defconstant start-marker '(start))
+
+;; (defun gps (state goals &optional (*ops* *ops*))
+;;   "General Problem Solver 2: from STATE achieve GOALS using *OPS*"
+;;   (let ((end-state (achieve-all (cons '(start) state) goals)))
+;; (format t "Success: ~A~%" end-state)
+;;     (if (failedp end-state)
+;;         nil
+;;         (remove-if #'atom end-state))))
+
 (defun gps (state goals &optional (*ops* *ops*))
   "General Problem Solver 2: from STATE achieve GOALS using *OPS*"
-  (let ((end-state (achieve-all (cons '(start) state) goals)))
+  (let ((end-state (achieve-all (cons start-marker state) goals)))
 (format t "Success: ~A~%" end-state)
     (if (failedp end-state)
         nil
-        (remove-if #'atom end-state))))
+        (remove-if-not #'actionp end-state))))
+
+(defun actionp (expr)
+  "Does EXPR represent an action? (Lists of the form: (START) or (EXECUTING ...))"
+  (or (equal expr start-marker)
+      (executingp expr)))
 
 (defun achieve-all (state goals &optional goal-stack)
   "Achieve each goal, and make sure they still hold at the end."
