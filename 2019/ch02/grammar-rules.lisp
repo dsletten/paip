@@ -118,7 +118,7 @@
 ;;;    Norvig original
 ;;;    
 ;; (defun generate (phrase)
-;;   (cond ((listp phrase) (mapcan #'generate phrase))
+;;   (cond ((listp phrase) (mapcan #'generate phrase)) ; He uses his MAPPEND...
 ;;         ((rewrites phrase) (generate (random-elt (rewrites phrase))))
 ;;         (t (list phrase))))
 
@@ -132,6 +132,18 @@
 ;;         (if (null choices)
 ;;             (list phrase)
 ;;             (generate (random-elt (rewrites phrase)))) )))
+
+;;;
+;;;    My first version.
+;;;    
+(defun generate (phrase)
+  (if (listp phrase)
+      (loop for term in phrase
+            nconc (generate term))
+      (let ((rewrites (rewrites phrase)))
+        (if (null rewrites)
+            (list phrase)
+            (generate (random-elt rewrites)))) ))
 
 ;;;
 ;;;    Ex. 2.1
@@ -149,15 +161,32 @@
   (null (rewrites symbol)))
 
 ;;;
-;;;    Argument to GENERATE is always a symbol now. Some recursive calls eliminated from original version.
+;;;    Argument to GENERATE is always a symbol now. In fact, it is always a non-terminal symbol
+;;;    unless GENERATE is called directly with a terminal:
+;;;    (generate 'ball) => BALL
+;;;    No need to produce a list in this case.
+;;;    
+;;;    This eliminates some recursive calls from original version.
+;;;    
+;; (defun generate (symbol)
+;;   (if (terminalp symbol)
+;;       symbol
+;;       (let ((rewrite (random-elt (rewrites symbol))))
+;;         (if (listp rewrite)
+;;             (mapcan #'generate rewrite)
+;;             (list rewrite)))) )
+
+;;;
+;;;    The outer IF ensures that non-terminal symbol will have rewrites, but the chosen rewrite
+;;;    may itself be (), e.g., in *BIGGER-GRAMMAR*.
 ;;;    
 (defun generate (symbol)
   (if (terminalp symbol)
       symbol
       (let ((rewrite (random-elt (rewrites symbol))))
-        (if (listp rewrite)
-            (mapcan #'generate rewrite)
-            (list rewrite)))) )
+        (cond ((null rewrite) '())
+              ((listp rewrite) (mapcan #'generate rewrite))
+              (t (list rewrite)))) ))
 
 (defparameter *bigger-grammar* '((sentence -> (noun-phrase verb-phrase))
                                  (noun-phrase -> (article adj* noun pp*) (name) (pronoun))
@@ -174,7 +203,7 @@
                                  (verb -> hit took saw liked)))
 
 ;;;;
-;;;;    Show phrase structure as parse tre
+;;;;    Show phrase structure as parse tree
 ;;;;    
 
 ;;;

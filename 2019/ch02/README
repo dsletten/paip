@@ -1,0 +1,9 @@
+Norvig's game plan for ch. 2:
+- Basic function-based grammar grammar-simple.lisp
+- Extended function-based grammar shows complication of approach grammar2.lisp
+
+- Basic rule-based grammar grammar-rules.lisp
+- Extended rule-based grammar does not require change to code (GENERATE function). [See grammar-rules.lisp]
+- Extend program (parse tree) with same set of rules. [See grammar-rules.lisp]
+
+(grammar.lisp is old equivalent to grammar2.lisp with more extensive vocabulary (more terminals))

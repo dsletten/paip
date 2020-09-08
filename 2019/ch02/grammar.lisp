@@ -23,7 +23,7 @@
 ;;;;
 ;;;;   Example:
 ;;;;
-;;;;   Notes: Basically grammar2.lisp with more fancier words...
+;;;;   Notes: This is grammar2.lisp with more fancier words...
 ;;;;
 ;;;;
 (load "/home/slytobias/lisp/packages/test.lisp")

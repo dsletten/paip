@@ -4,3 +4,15 @@ Consider discussion of naming on pg. 117 vs. knowledge representation in general
 ================================================================================
 200808
 Sort out Norvig's "Recursive Subgoal Problem" mess section 4.9
+(See the maze domain.)
+================================================================================
+200830
+Figure out how to use the rule-based grammar approach in ch. 2 to implement recognizers
+as an alternative to FSMs.
+Examples:
+- Roman numerals
+- Parse rational program
+- Polynomials
+
+These applications are pretty straightforward using local recursive functions.
+But they would be more flexible (?) using the data-driven approach of ch. 2.
